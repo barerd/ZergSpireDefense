@@ -13,27 +13,35 @@
   const towerButtons = [...document.querySelectorAll('[data-tower]')];
 
   const path = [
-    {x: -40, y: 120},
-    {x: 170, y: 120},
-    {x: 170, y: 290},
-    {x: 380, y: 290},
-    {x: 380, y: 165},
-    {x: 610, y: 165},
-    {x: 610, y: 385},
-    {x: 830, y: 385},
-    {x: 1000, y: 385}
+    { x: -40, y: 120 },
+    { x: 170, y: 120 },
+    { x: 170, y: 290 },
+    { x: 380, y: 290 },
+    { x: 380, y: 165 },
+    { x: 610, y: 165 },
+    { x: 610, y: 385 },
+    { x: 830, y: 385 },
+    { x: 1000, y: 385 }
   ];
 
   const pads = [
-    {x: 90, y: 55}, {x: 255, y: 110}, {x: 280, y: 355}, {x: 450, y: 345},
-    {x: 500, y: 100}, {x: 700, y: 210}, {x: 730, y: 455}, {x: 890, y: 285},
-    {x: 165, y: 455}, {x: 560, y: 470}
+    { x: 90, y: 55 }, { x: 255, y: 110 }, { x: 280, y: 355 }, { x: 450, y: 345 },
+    { x: 500, y: 100 }, { x: 700, y: 210 }, { x: 730, y: 455 }, { x: 890, y: 285 },
+    { x: 165, y: 455 }, { x: 560, y: 470 }
   ];
 
   const towerDefs = {
     spine: { name: 'Spine Torso', cost: 30, range: 180, fireRate: 0.55, damage: 24, color: '#8bff8c' },
     hydra: { name: 'Hydra Torso', cost: 60, range: 275, fireRate: 0.30, damage: 18, color: '#67d7ff' },
     ultra: { name: 'Ultra Torso', cost: 80, range: 115, fireRate: 0.80, damage: 52, color: '#ff93d2' }
+  };
+
+  const enemyDefs = {
+    raider:   { hp: 55,  speed: 72, reward: 12, color: '#61b7ff' },
+    marauder: { hp: 90,  speed: 54, reward: 18, color: '#4f84ff' },
+    zealot:   { hp: 110, speed: 66, reward: 22, color: '#ffd66d' },
+    stalker:  { hp: 145, speed: 58, reward: 30, color: '#c58cff' },
+    colossus: { hp: 360, speed: 34, reward: 80, color: '#ff9a63', boss: true }
   };
 
   const state = {
@@ -50,6 +58,21 @@
     spawnTimer: 0,
     lastTime: 0,
     gameOver: false
+  };
+
+  const spriteSheet = new Image();
+  spriteSheet.src = 'zergspire_spritesheet.png';
+
+  const SPRITE_CELL = 128;
+  const sprites = {
+    spine:    { sx: 0 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 86, h: 86, ox: 43, oy: 60 },
+    hydra:    { sx: 1 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 92, h: 92, ox: 46, oy: 66 },
+    ultra:    { sx: 2 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 96, h: 96, ox: 48, oy: 72 },
+    raider:   { sx: 3 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 40, h: 40, ox: 20, oy: 28 },
+    marauder: { sx: 0 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 48, h: 48, ox: 24, oy: 34 },
+    zealot:   { sx: 1 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 42, h: 42, ox: 21, oy: 29 },
+    stalker:  { sx: 2 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 46, h: 46, ox: 23, oy: 32 },
+    colossus: { sx: 3 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 68, h: 68, ox: 34, oy: 52 }
   };
 
   function setActiveButton() {
@@ -70,31 +93,38 @@
   }
 
   function pathPosition(seg, t) {
-    const a = path[seg], b = path[seg + 1];
+    const a = path[seg];
+    const b = path[seg + 1];
     return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
   }
 
   function makeEnemy(kind) {
-    const defs = {
-      raider: { hp: 55, speed: 72, reward: 12, color: '#61b7ff' },
-      marauder: { hp: 90, speed: 54, reward: 18, color: '#4f84ff' },
-      zealot: { hp: 110, speed: 66, reward: 22, color: '#ffd66d' },
-      stalker: { hp: 145, speed: 58, reward: 30, color: '#c58cff' },
-      colossus: { hp: 360, speed: 34, reward: 80, color: '#ff9a63', boss: true }
+    const def = enemyDefs[kind];
+    return {
+      kind,
+      ...def,
+      maxHp: def.hp,
+      seg: 0,
+      t: 0,
+      x: path[0].x,
+      y: path[0].y
     };
-    return { kind, ...defs[kind], seg: 0, t: 0, x: path[0].x, y: path[0].y };
   }
 
   function startWave() {
     if (state.waveQueue.length || state.gameOver) return;
     state.wave += 1;
     const q = [];
-    const pushMany = (k, n) => { for (let i = 0; i < n; i++) q.push(k); };
+    const pushMany = (k, n) => {
+      for (let i = 0; i < n; i++) q.push(k);
+    };
+
     pushMany('raider', 4 + state.wave * 2);
     if (state.wave >= 2) pushMany('marauder', 2 + state.wave);
     if (state.wave >= 3) pushMany('zealot', 2 + state.wave);
     if (state.wave >= 5) pushMany('stalker', 1 + Math.floor(state.wave * 0.8));
     if (state.wave % 4 === 0) pushMany('colossus', 1);
+
     state.waveQueue = q;
     state.spawnTimer = 0;
     syncHud();
@@ -111,6 +141,7 @@
     if (state.towers[index]) return;
     const def = towerDefs[state.selectedTowerType];
     if (state.money < def.cost) return;
+
     state.money -= def.cost;
     state.towers[index] = {
       type: state.selectedTowerType,
@@ -127,9 +158,11 @@
   function upgradeSelected() {
     const i = state.selectedPadIndex;
     if (i == null || !state.towers[i]) return;
+
     const tower = state.towers[i];
     const cost = 80 * tower.level;
     if (state.money < cost || tower.level >= 4) return;
+
     state.money -= cost;
     tower.level += 1;
     tower.damage = Math.round(tower.damage * 1.35);
@@ -157,8 +190,12 @@
     }
     state.selectedPadIndex = null;
   }
+
   canvas.addEventListener('click', handlePointer);
-  canvas.addEventListener('touchstart', e => { e.preventDefault(); handlePointer(e); }, { passive: false });
+  canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
+    handlePointer(e);
+  }, { passive: false });
 
   function update(dt) {
     if (state.gameOver) return;
@@ -172,9 +209,11 @@
     }
 
     for (const enemy of state.enemies) {
-      const a = path[enemy.seg], b = path[enemy.seg + 1];
+      const a = path[enemy.seg];
+      const b = path[enemy.seg + 1];
       const len = Math.hypot(b.x - a.x, b.y - a.y);
       enemy.t += (enemy.speed * dt) / len;
+
       if (enemy.t >= 1) {
         enemy.seg += 1;
         enemy.t = 0;
@@ -188,6 +227,7 @@
           continue;
         }
       }
+
       const pos = pathPosition(enemy.seg, enemy.t);
       enemy.x = pos.x;
       enemy.y = pos.y;
@@ -197,9 +237,11 @@
       if (!tower) continue;
       tower.cooldown -= dt;
       if (tower.cooldown > 0) continue;
+
       let target = null;
       let bestSeg = -1;
       let bestT = -1;
+
       for (const e of state.enemies) {
         if (e.dead) continue;
         if (dist(tower, e) <= tower.range) {
@@ -210,11 +252,15 @@
           }
         }
       }
+
       if (target) {
         state.projectiles.push({
-          x: tower.x, y: tower.y - 18,
-          tx: target.x, ty: target.y,
-          target, damage: tower.damage,
+          x: tower.x,
+          y: tower.y - 18,
+          tx: target.x,
+          ty: target.y,
+          target,
+          damage: tower.damage,
           speed: 360,
           color: tower.color
         });
@@ -223,9 +269,15 @@
     }
 
     for (const p of state.projectiles) {
-      if (!p.target || p.target.dead) { p.dead = true; continue; }
-      const dx = p.target.x - p.x, dy = p.target.y - p.y;
+      if (!p.target || p.target.dead) {
+        p.dead = true;
+        continue;
+      }
+
+      const dx = p.target.x - p.x;
+      const dy = p.target.y - p.y;
       const d = Math.hypot(dx, dy);
+
       if (d < 10) {
         p.target.hp -= p.damage;
         if (p.target.hp <= 0 && !p.target.dead) {
@@ -247,6 +299,7 @@
 
   function drawBackground() {
     ctx.clearRect(0, 0, W, H);
+
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, '#132132');
     g.addColorStop(1, '#071018');
@@ -254,7 +307,8 @@
     ctx.fillRect(0, 0, W, H);
 
     for (let i = 0; i < 90; i++) {
-      const x = (i * 137) % W, y = (i * 79) % H;
+      const x = (i * 137) % W;
+      const y = (i * 79) % H;
       ctx.fillStyle = i % 7 === 0 ? '#1d3f2e' : '#17334d';
       ctx.fillRect(x, y, 2, 2);
     }
@@ -284,7 +338,24 @@
     }
   }
 
-  function drawTower(t) {
+  function drawSprite(key, x, y, opts = {}) {
+    const s = sprites[key];
+    if (!s || !spriteSheet.complete || !spriteSheet.naturalWidth) return false;
+
+    const w = opts.w ?? s.w;
+    const h = opts.h ?? s.h;
+    const ox = opts.ox ?? s.ox;
+    const oy = opts.oy ?? s.oy;
+
+    ctx.drawImage(
+      spriteSheet,
+      s.sx, s.sy, s.sw, s.sh,
+      x - ox, y - oy, w, h
+    );
+    return true;
+  }
+
+  function drawTowerFallback(t) {
     ctx.save();
     ctx.translate(t.x, t.y);
     const colors = { spine: '#59f57f', hydra: '#60d8ff', ultra: '#ff7cd0' };
@@ -310,15 +381,10 @@
     ctx.arc(-7, -3, 3, 0, Math.PI * 2);
     ctx.arc(7, -3, 3, 0, Math.PI * 2);
     ctx.fill();
-
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < t.level; i++) {
-      ctx.fillRect(-14 + i * 8, 34, 5, 5);
-    }
     ctx.restore();
   }
 
-  function drawEnemy(e) {
+  function drawEnemyFallback(e) {
     ctx.save();
     ctx.translate(e.x, e.y);
     if (e.kind === 'raider' || e.kind === 'marauder') {
@@ -329,7 +395,11 @@
     } else if (e.kind === 'zealot' || e.kind === 'stalker') {
       ctx.fillStyle = e.color;
       ctx.beginPath();
-      ctx.moveTo(0, -16); ctx.lineTo(14, 0); ctx.lineTo(0, 16); ctx.lineTo(-14, 0); ctx.closePath();
+      ctx.moveTo(0, -16);
+      ctx.lineTo(14, 0);
+      ctx.lineTo(0, 16);
+      ctx.lineTo(-14, 0);
+      ctx.closePath();
       ctx.fill();
     } else {
       ctx.fillStyle = e.color;
@@ -337,11 +407,42 @@
       ctx.fillStyle = '#fff2cf';
       ctx.fillRect(-6, -28, 12, 8);
     }
+    ctx.restore();
+  }
+
+  function drawTower(t) {
+    ctx.save();
+
+    const selected = state.selectedPadIndex != null && state.towers[state.selectedPadIndex] === t;
+    if (selected) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#9cffb2';
+      ctx.lineWidth = 2;
+      ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    const drawn = drawSprite(t.type, t.x, t.y);
+    if (!drawn) drawTowerFallback(t);
+
+    for (let i = 0; i < t.level; i++) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(t.x - 14 + i * 8, t.y + 34, 5, 5);
+    }
+
+    ctx.restore();
+  }
+
+  function drawEnemy(e) {
+    ctx.save();
+    const drawn = drawSprite(e.kind, e.x, e.y);
+    if (!drawn) drawEnemyFallback(e);
 
     ctx.fillStyle = '#00000088';
-    ctx.fillRect(-16, -30, 32, 5);
+    ctx.fillRect(e.x - 16, e.y - 34, 32, 5);
+
     ctx.fillStyle = '#6dff76';
-    ctx.fillRect(-16, -30, 32 * Math.max(0, e.hp / (e.kind === 'colossus' ? 360 : e.kind === 'stalker' ? 145 : e.kind === 'zealot' ? 110 : e.kind === 'marauder' ? 90 : 55)), 5);
+    ctx.fillRect(e.x - 16, e.y - 34, 32 * Math.max(0, e.hp / e.maxHp), 5);
     ctx.restore();
   }
 
