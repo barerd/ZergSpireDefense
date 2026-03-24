@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zergspire Defense</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="hud">
+    <div class="left">
+      <h1>Zergspire Defense</h1>
+      <div class="sub">Sci‑fi bio-defense, inspired by classic RTS vibes</div>
+    </div>
+    <div class="stats">
+      <div>Biomass: <span id="money">140</span></div>
+      <div>Integrity: <span id="lives">20</span></div>
+      <div>Wave: <span id="wave">0</span></div>
+      <div>Score: <span id="score">0</span></div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button data-tower="spine">Spawn Spine Torso (60)</button>
+    <button data-tower="hydra">Spawn Hydra Torso (90)</button>
+    <button data-tower="ultra">Spawn Ultra Torso (140)</button>
+    <button id="upgradeBtn">Upgrade Selected (80)</button>
+    <button id="startBtn">Start / Next Wave</button>
+  </div>
+
+  <div class="help">
+    Tap an empty pad to place the selected tower. Tap a placed tower to select it, then upgrade it.
+    Invaders are color-coded human empire raiders and psionic alien walkers. Defenders are giant stationary bio-torsos.
+  </div>
+
+  <canvas id="game" width="960" height="540"></canvas>
+
+  <script src="game.js"></script>
+</body>
+</html>
