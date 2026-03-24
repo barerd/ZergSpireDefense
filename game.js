@@ -31,9 +31,9 @@
   ];
 
   const towerDefs = {
-    spine: { name: 'Spine Torso', cost: 60, range: 120, fireRate: 0.8, damage: 14, color: '#8bff8c' },
-    hydra: { name: 'Hydra Torso', cost: 90, range: 165, fireRate: 0.45, damage: 10, color: '#67d7ff' },
-    ultra: { name: 'Ultra Torso', cost: 140, range: 105, fireRate: 1.15, damage: 32, color: '#ff93d2' }
+    spine: { name: 'Spine Torso', cost: 30, range: 180, fireRate: 0.55, damage: 24, color: '#8bff8c' },
+    hydra: { name: 'Hydra Torso', cost: 60, range: 275, fireRate: 0.30, damage: 18, color: '#67d7ff' },
+    ultra: { name: 'Ultra Torso', cost: 80, range: 115, fireRate: 0.80, damage: 52, color: '#ff93d2' }
   };
 
   const state = {
