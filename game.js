@@ -46,7 +46,7 @@
     raider:   { sx: 3 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 40, h: 40, ox: 20, oy: 28 },
     marauder: { sx: 0 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 48, h: 48, ox: 24, oy: 34 },
     zealot:   { sx: 1 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 37, h: 42, ox: 21, oy: 29 },
-    stalker:  { sx: 2 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 46, h: 46, ox: 23, oy: 32 },
+    stalker:  { sx: 2 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 44, h: 46, ox: 23, oy: 32 },
     colossus: { sx: 3 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 68, h: 68, ox: 34, oy: 52 }
   };
 
