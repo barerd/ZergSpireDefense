@@ -37,7 +37,7 @@
 
   // Static atlas for invaders only.
   const spriteSheet = new Image();
-  spriteSheet.src = 'zergspire_spritesheet';
+  spriteSheet.src = 'zergspire_spritesheet.png';
 
   const SPRITE_CELL = 128;
   const sprites = {
@@ -53,47 +53,41 @@
 
   // Animated tower sheets.
   const TOWER_SPRITES = {
-    spine: {
-      src: 'spine_spritesheet.png',
-      frameW: 425,
-      frameH: 335,
-      rows: {
-        idle:   { y: 0, count: 3, fps: 4, loop: true },
-        attack: { y: 1, count: 3, fps: 10, loop: false }
-      },
-      drawW: 86,
-      drawH: 86,
-      ox: 43,
-      oy: 60
-    },
-
-    hydra: {
-      src: 'hydra_spritesheet.png',
-      frameW: 455,
-      frameH: 331,
-      rows: {
-        idle:   { y: 0, count: 3, fps: 4, loop: true },
-        attack: { y: 1, count: 5, fps: 12, loop: false }
-      },
-      drawW: 92,
-      drawH: 92,
-      ox: 40,
-      oy: 60
-    },
-
-    ultra: {
-      src: 'ultra_spritesheet.png',
-      frameW: 422,
-      frameH: 331,
-      rows: {
-        idle:   { y: 0, count: 3, fps: 4, loop: true },
-        attack: { y: 1, count: 3, fps: 10, loop: false }
-      },
-      drawW: 96,
-      drawH: 96,
-      ox: 40,
-      oy: 68
+  spine: {
+    src: 'spine_spritesheet.png',
+    drawW: 86,
+    drawH: 86,
+    ox: 43,
+    oy: 60,
+    rows: {
+      idle:   { y: 0, count: 3, fps: 4, loop: true },
+      attack: { y: 1, count: 3, fps: 10, loop: false }
     }
+  },
+
+  hydra: {
+    src: 'hydra_spritesheet.png',
+    drawW: 92,
+    drawH: 92,
+    ox: 40,
+    oy: 60,
+    rows: {
+      idle:   { y: 0, count: 3, fps: 4, loop: true },
+      attack: { y: 1, count: 5, fps: 12, loop: false }
+    }
+  },
+
+  ultra: {
+    src: 'ultra_spritesheet.png',
+    drawW: 96,
+    drawH: 96,
+    ox: 40,
+    oy: 68,
+    rows: {
+      idle:   { y: 0, count: 3, fps: 4, loop: true },
+      attack: { y: 1, count: 3, fps: 10, loop: false }
+    }
+  }
   };
 
   const towerSpriteImages = {};
@@ -982,12 +976,16 @@
     const row = meta.rows[t.animState] || meta.rows.idle;
     const frameIndex = Math.min(t.animFrame, row.count - 1);
 
-    const sx = frameIndex * meta.frameW;
-    const sy = row.y * meta.frameH;
+    const rowH = img.naturalHeight / 2;
+    const frameW = img.naturalWidth / row.count;
+    const frameH = rowH;
+
+    const sx = frameIndex * frameW;
+    const sy = row.y * rowH;
 
     ctx.drawImage(
       img,
-      sx, sy, meta.frameW, meta.frameH,
+      sx, sy, frameW, frameH,
       Math.round(t.x - meta.ox),
       Math.round(t.y - meta.oy),
       meta.drawW, meta.drawH
