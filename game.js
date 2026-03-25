@@ -12,23 +12,9 @@
   const upgradeBtn = document.getElementById('upgradeBtn');
   const towerButtons = [...document.querySelectorAll('[data-tower]')];
 
-  const path = [
-    { x: -40, y: 120 },
-    { x: 170, y: 120 },
-    { x: 170, y: 290 },
-    { x: 380, y: 290 },
-    { x: 380, y: 165 },
-    { x: 610, y: 165 },
-    { x: 610, y: 385 },
-    { x: 830, y: 385 },
-    { x: 1000, y: 385 }
-  ];
+  let path = smoothPath(generatePath());
 
-  const pads = [
-    { x: 90, y: 55 }, { x: 255, y: 110 }, { x: 280, y: 355 }, { x: 450, y: 345 },
-    { x: 500, y: 100 }, { x: 700, y: 210 }, { x: 730, y: 455 }, { x: 890, y: 285 },
-    { x: 165, y: 455 }, { x: 560, y: 470 }
-  ];
+  let pads = generatePads(path, 10);
 
   const towerDefs = {
     spine: { name: 'Spine Torso', cost: 30, range: 180, fireRate: 0.55, damage: 24, color: '#8bff8c' },
@@ -483,6 +469,122 @@
     requestAnimationFrame(loop);
   }
 
-  syncHud();
+  function generatePath(cols = 10, rows = 6) {
+  const cellW = W / cols;
+  const cellH = H / rows;
+
+  const visited = new Set();
+  const pathCells = [];
+
+  let x = 0;
+  let y = Math.floor(rows / 2);
+
+  function key(x, y) { return `${x},${y}`; }
+
+  pathCells.push({ x, y });
+  visited.add(key(x, y));
+
+  while (x < cols - 1) {
+    const moves = [];
+
+    // always allow right
+    moves.push({ dx: 1, dy: 0 });
+
+    // allow vertical moves but limit chaos
+    if (y > 1) moves.push({ dx: 0, dy: -1 });
+    if (y < rows - 2) moves.push({ dx: 0, dy: 1 });
+
+    // weighted randomness
+    const move = moves[Math.floor(Math.random() * moves.length)];
+
+    const nx = x + move.dx;
+    const ny = y + move.dy;
+
+    if (!visited.has(key(nx, ny))) {
+      x = nx;
+      y = ny;
+      pathCells.push({ x, y });
+      visited.add(key(x, y));
+    }
+  }
+
+  // convert to pixel coordinates
+  return pathCells.map(c => ({
+    x: c.x * cellW + cellW / 2,
+    y: c.y * cellH + cellH / 2
+  }));
+}
+
+function smoothPath(path) {
+  const result = [];
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i];
+    const b = path[i + 1];
+
+    result.push(a);
+
+    // insert midpoint
+    result.push({
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2
+    });
+  }
+  result.push(path[path.length - 1]);
+  return result;
+}
+
+function generatePads(path, count = 10) {
+  const pads = [];
+
+  function tooClose(p, list, d = 60) {
+    return list.some(o => Math.hypot(p.x - o.x, p.y - o.y) < d);
+  }
+
+  for (let i = 1; i < path.length - 1; i++) {
+    if (pads.length >= count) break;
+
+    const p = path[i];
+
+    // perpendicular offset
+    const dx = path[i + 1].x - path[i - 1].x;
+    const dy = path[i + 1].y - path[i - 1].y;
+
+    const len = Math.hypot(dx, dy);
+    const nx = -dy / len;
+    const ny = dx / len;
+
+    const offset = 70 + Math.random() * 40;
+
+    const candidate = {
+      x: p.x + nx * offset,
+      y: p.y + ny * offset
+    };
+
+    if (
+      candidate.x > 40 && candidate.x < W - 40 &&
+      candidate.y > 40 && candidate.y < H - 40 &&
+      !tooClose(candidate, pads)
+    ) {
+      pads.push(candidate);
+    }
+  }
+
+  return pads;
+}
+
+function regenerateMap() {
+  path = smoothPath(generatePath());
+  pads = generatePads(path, 10);
+
+  state.towers = [];
+  state.enemies = [];
+  state.projectiles = [];
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'r') regenerateMap();
+});
+
+syncHud();
   requestAnimationFrame(loop);
 })();
