@@ -60,8 +60,8 @@
     ox: 43,
     oy: 60,
     rows: {
-      idle:   { y: 0, count: 3, fps: 4, loop: true },
-      attack: { y: 1, count: 3, fps: 10, loop: false }
+      idle:   { y: 0, count: 3, fps: 1.8, loop: true },
+      attack: { y: 1, count: 3, fps: 8, loop: false }
     }
   },
 
@@ -72,8 +72,8 @@
     ox: 40,
     oy: 60,
     rows: {
-      idle:   { y: 0, count: 3, fps: 4, loop: true },
-      attack: { y: 1, count: 5, fps: 12, loop: false }
+      idle:   { y: 0, count: 3, fps: 1.8, loop: true },
+      attack: { y: 1, count: 6, fps: 10, loop: false }
     }
   },
 
@@ -84,11 +84,11 @@
     ox: 40,
     oy: 68,
     rows: {
-      idle:   { y: 0, count: 3, fps: 4, loop: true },
-      attack: { y: 1, count: 3, fps: 10, loop: false }
+      idle:   { y: 0, count: 3, fps: 1.6, loop: true },
+      attack: { y: 1, count: 3, fps: 8, loop: false }
     }
   }
-  };
+};
 
   const towerSpriteImages = {};
   let towerSpritesReady = false;
@@ -967,32 +967,40 @@
   }
 
   function drawAnimatedTower(t) {
-    if (!towerSpritesReady) return false;
+  if (!towerSpritesReady) return false;
 
-    const meta = getTowerSpriteMeta(t.type);
-    const img = towerSpriteImages[t.type];
-    if (!meta || !img || !img.complete || !img.naturalWidth) return false;
+  const meta = getTowerSpriteMeta(t.type);
+  const img = towerSpriteImages[t.type];
+  if (!meta || !img || !img.complete || !img.naturalWidth) return false;
 
-    const row = meta.rows[t.animState] || meta.rows.idle;
-    const frameIndex = Math.min(t.animFrame, row.count - 1);
+  const row = meta.rows[t.animState] || meta.rows.idle;
+  const frameIndex = Math.min(t.animFrame, row.count - 1);
 
-    const rowH = img.naturalHeight / 2;
-    const frameW = img.naturalWidth / row.count;
-    const frameH = rowH;
+  const rowH = Math.floor(img.naturalHeight / 2);
 
-    const sx = frameIndex * frameW;
-    const sy = row.y * rowH;
+  const frameW =
+    row.frameW != null
+      ? row.frameW
+      : Math.floor(img.naturalWidth / row.count);
 
-    ctx.drawImage(
-      img,
-      sx, sy, frameW, frameH,
-      Math.round(t.x - meta.ox),
-      Math.round(t.y - meta.oy),
-      meta.drawW, meta.drawH
-    );
+  const startX =
+    row.startX != null
+      ? row.startX
+      : 0;
 
-    return true;
-  }
+  const sx = Math.floor(startX + frameIndex * frameW);
+  const sy = Math.floor(row.y * rowH);
+
+  ctx.drawImage(
+    img,
+    sx, sy, frameW, rowH,
+    Math.round(t.x - meta.ox),
+    Math.round(t.y - meta.oy),
+    meta.drawW, meta.drawH
+  );
+
+  return true;
+}
 
   function drawTowerFallback(t) {
     ctx.save();
