@@ -41,7 +41,7 @@
   const SPRITE_CELL = 128;
   const sprites = {
     spine:    { sx: 0 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 86, h: 86, ox: 43, oy: 60 },
-    hydra:    { sx: 1 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 92, h: 92, ox: 42, oy: 60 },
+    hydra:    { sx: 1 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 92, h: 92, ox: 46, oy: 60 },
     ultra:    { sx: 2 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 96, h: 96, ox: 40, oy: 68 },
     raider:   { sx: 3 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 40, h: 40, ox: 20, oy: 28 },
     marauder: { sx: 0 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 48, h: 48, ox: 24, oy: 34 },
