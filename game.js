@@ -533,40 +533,60 @@ function smoothPath(path) {
   return result;
 }
 
-function generatePads(path, count = 10) {
+function generatePads(path, count = 10, theme = 'balanced') {
   const pads = [];
+  const candidates = [];
 
-  function tooClose(p, list, d = 60) {
-    return list.some(o => Math.hypot(p.x - o.x, p.y - o.y) < d);
+  let minOffset = 70;
+  let maxOffset = 110;
+
+  if (theme === 'sniper') {
+    minOffset = 95;
+    maxOffset = 150;
+  } else if (theme === 'maze') {
+    minOffset = 60;
+    maxOffset = 90;
+  } else if (theme === 'wide') {
+    minOffset = 85;
+    maxOffset = 130;
   }
 
-  for (let i = 1; i < path.length - 1; i++) {
-    if (pads.length >= count) break;
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = path[i];
+    const b = path[i + 1];
 
-    const p = path[i];
+    const mx = (a.x + b.x) / 2;
+    const my = (a.y + b.y) / 2;
 
-    // perpendicular offset
-    const dx = path[i + 1].x - path[i - 1].x;
-    const dy = path[i + 1].y - path[i - 1].y;
-
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
     const len = Math.hypot(dx, dy);
+    if (len < 1) continue;
+
     const nx = -dy / len;
     const ny = dx / len;
 
-    const offset = 70 + Math.random() * 40;
+    for (const side of [-1, 1]) {
+      const offset = minOffset + Math.random() * (maxOffset - minOffset);
+      const jitter = 14;
 
-    const candidate = {
-      x: p.x + nx * offset,
-      y: p.y + ny * offset
-    };
+      const candidate = {
+        x: mx + nx * offset * side + (Math.random() * 2 - 1) * jitter,
+        y: my + ny * offset * side + (Math.random() * 2 - 1) * jitter
+      };
 
-    if (
-      candidate.x > 40 && candidate.x < W - 40 &&
-      candidate.y > 40 && candidate.y < H - 40 &&
-      !tooClose(candidate, pads)
-    ) {
-      pads.push(candidate);
+      if (isPadValid(candidate, candidates, path)) {
+        candidates.push(candidate);
+      }
     }
+  }
+
+  // prefer candidates near corners / high-coverage areas later
+  shuffleInPlace(candidates);
+
+  for (const c of candidates) {
+    if (pads.length >= count) break;
+    if (isPadValid(c, pads, path)) pads.push(c);
   }
 
   return pads;
@@ -579,6 +599,66 @@ function regenerateMap() {
   state.towers = [];
   state.enemies = [];
   state.projectiles = [];
+}
+
+function clamp(v, a, b) {
+  return Math.max(a, Math.min(b, v));
+}
+
+function pointToSegmentDistance(px, py, ax, ay, bx, by) {
+  const abx = bx - ax;
+  const aby = by - ay;
+  const abLenSq = abx * abx + aby * aby;
+
+  if (abLenSq === 0) return Math.hypot(px - ax, py - ay);
+
+  const t = clamp(((px - ax) * abx + (py - ay) * aby) / abLenSq, 0, 1);
+  const cx = ax + abx * t;
+  const cy = ay + aby * t;
+  return Math.hypot(px - cx, py - cy);
+}
+
+function pointToPolylineDistance(p, polyline) {
+  let best = Infinity;
+  for (let i = 0; i < polyline.length - 1; i++) {
+    const a = polyline[i];
+    const b = polyline[i + 1];
+    const d = pointToSegmentDistance(p.x, p.y, a.x, a.y, b.x, b.y);
+    if (d < best) best = d;
+  }
+  return best;
+}
+
+function isPadValid(candidate, pads, path) {
+  const PAD_RADIUS = 28;
+  const ROAD_CLEARANCE = 60;   // tune 56-64
+  const PAD_SPACING = 72;      // tune 68-90
+  const EDGE_MARGIN = 36;
+
+  // in bounds
+  if (
+    candidate.x < EDGE_MARGIN ||
+    candidate.x > W - EDGE_MARGIN ||
+    candidate.y < EDGE_MARGIN ||
+    candidate.y > H - EDGE_MARGIN
+  ) return false;
+
+  // far enough from road
+  if (pointToPolylineDistance(candidate, path) < ROAD_CLEARANCE) return false;
+
+  // far enough from other pads
+  for (const p of pads) {
+    if (Math.hypot(candidate.x - p.x, candidate.y - p.y) < PAD_SPACING) return false;
+  }
+
+  return true;
+}
+
+function shuffleInPlace(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
 }
 
 document.addEventListener('keydown', e => {
