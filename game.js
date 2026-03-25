@@ -37,7 +37,7 @@
 
   // Static atlas for invaders only.
   const spriteSheet = new Image();
-  spriteSheet.src = 'zergspire_spritesheet.png';
+  spriteSheet.src = 'zergspire_spritesheet';
 
   const SPRITE_CELL = 128;
   const sprites = {
@@ -54,7 +54,7 @@
   // Animated tower sheets.
   const TOWER_SPRITES = {
     spine: {
-      src: 'spine_spritesheet.jpeg',
+      src: 'spine_spritesheet.png',
       frameW: 425,
       frameH: 335,
       rows: {
@@ -68,7 +68,7 @@
     },
 
     hydra: {
-      src: 'hydra_spritesheet.jpeg',
+      src: 'hydra_spritesheet.png',
       frameW: 455,
       frameH: 331,
       rows: {
@@ -82,7 +82,7 @@
     },
 
     ultra: {
-      src: 'ultra_spritesheet.jpeg',
+      src: 'ultra_spritesheet.png',
       frameW: 422,
       frameH: 331,
       rows: {
