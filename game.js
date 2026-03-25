@@ -22,9 +22,9 @@
   const PAD_MAX_USEFUL_DIST = 170;
 
   const towerDefs = {
-    spine: { name: 'Spine Torso', cost: 30, range: 180, fireRate: 0.55, damage: 24, color: '#8bff8c' },
-    hydra: { name: 'Hydra Torso', cost: 60, range: 275, fireRate: 0.30, damage: 18, color: '#67d7ff' },
-    ultra: { name: 'Ultra Torso', cost: 80, range: 115, fireRate: 0.80, damage: 52, color: '#ff93d2' }
+    spine: { name: 'Spine Torso', cost: 30, range: 150, fireRate: 0.55, damage: 24, color: '#8bff8c' },
+    hydra: { name: 'Hydra Torso', cost: 60, range: 225, fireRate: 0.30, damage: 18, color: '#67d7ff' },
+    ultra: { name: 'Ultra Torso', cost: 80, range: 85, fireRate: 0.80, damage: 52, color: '#ff93d2' }
   };
 
   const enemyDefs = {
@@ -32,7 +32,7 @@
     marauder: { hp: 90,  speed: 54, reward: 18, color: '#4f84ff' },
     zealot:   { hp: 110, speed: 66, reward: 22, color: '#ffd66d' },
     stalker:  { hp: 145, speed: 58, reward: 30, color: '#c58cff' },
-    colossus: { hp: 360, speed: 34, reward: 80, color: '#ff9a63', boss: true }
+    colossus: { hp: 1250, speed: 34, reward: 80, color: '#ff9a63', boss: true }
   };
 
   const spriteSheet = new Image();
@@ -41,7 +41,7 @@
   const SPRITE_CELL = 128;
   const sprites = {
     spine:    { sx: 0 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 86, h: 86, ox: 43, oy: 60 },
-    hydra:    { sx: 1 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 92, h: 92, ox: 40, oy: 60 },
+    hydra:    { sx: 1 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 92, h: 92, ox: 41, oy: 60 },
     ultra:    { sx: 2 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 96, h: 96, ox: 40, oy: 68 },
     raider:   { sx: 3 * SPRITE_CELL, sy: 0 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 40, h: 40, ox: 20, oy: 28 },
     marauder: { sx: 0 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 48, h: 48, ox: 24, oy: 34 },
