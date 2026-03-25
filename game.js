@@ -35,6 +35,7 @@
     colossus: { hp: 1250, speed: 34, reward: 80, color: '#ff9a63', boss: true }
   };
 
+  // Static atlas for invaders only.
   const spriteSheet = new Image();
   spriteSheet.src = 'zergspire_spritesheet.png';
 
@@ -49,6 +50,54 @@
     stalker:  { sx: 2 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 46, h: 46, ox: 23, oy: 32 },
     colossus: { sx: 3 * SPRITE_CELL, sy: 1 * SPRITE_CELL, sw: SPRITE_CELL, sh: SPRITE_CELL, w: 68, h: 68, ox: 34, oy: 52 }
   };
+
+  // Animated tower sheets.
+  const TOWER_SPRITES = {
+    spine: {
+      src: 'spine_spritesheet.jpeg',
+      frameW: 425,
+      frameH: 335,
+      rows: {
+        idle:   { y: 0, count: 3, fps: 4, loop: true },
+        attack: { y: 1, count: 3, fps: 10, loop: false }
+      },
+      drawW: 86,
+      drawH: 86,
+      ox: 43,
+      oy: 60
+    },
+
+    hydra: {
+      src: 'hydra_spritesheet.jpeg',
+      frameW: 455,
+      frameH: 331,
+      rows: {
+        idle:   { y: 0, count: 3, fps: 4, loop: true },
+        attack: { y: 1, count: 5, fps: 12, loop: false }
+      },
+      drawW: 92,
+      drawH: 92,
+      ox: 40,
+      oy: 60
+    },
+
+    ultra: {
+      src: 'ultra_spritesheet.jpeg',
+      frameW: 422,
+      frameH: 331,
+      rows: {
+        idle:   { y: 0, count: 3, fps: 4, loop: true },
+        attack: { y: 1, count: 3, fps: 10, loop: false }
+      },
+      drawW: 96,
+      drawH: 96,
+      ox: 40,
+      oy: 68
+    }
+  };
+
+  const towerSpriteImages = {};
+  let towerSpritesReady = false;
 
   const state = {
     money: 140,
@@ -79,6 +128,25 @@
   const mapInfo = controls.mapInfo;
 
   initFromUrlOrDefaults();
+
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+      img.src = src;
+    });
+  }
+
+  async function loadTowerSprites() {
+    const entries = Object.entries(TOWER_SPRITES);
+    await Promise.all(
+      entries.map(async ([key, meta]) => {
+        towerSpriteImages[key] = await loadImage(meta.src);
+      })
+    );
+    towerSpritesReady = true;
+  }
 
   function initFromUrlOrDefaults() {
     const params = new URLSearchParams(location.search);
@@ -270,13 +338,6 @@
     return items[items.length - 1].value;
   }
 
-  function shuffleInPlace(arr) {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(rand() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-  }
-
   function generateRandomSeed() {
     return Math.floor(Date.now() % 1000000000).toString(36);
   }
@@ -312,20 +373,6 @@
       if (d < best) best = d;
     }
     return best;
-  }
-
-  function segmentRectIntersectsExisting(ax, ay, bx, by, occupied) {
-    const minX = Math.min(ax, bx);
-    const maxX = Math.max(ax, bx);
-    const minY = Math.min(ay, by);
-    const maxY = Math.max(ay, by);
-
-    for (const cell of occupied) {
-      if (cell.x >= minX && cell.x <= maxX && cell.y >= minY && cell.y <= maxY) {
-        return true;
-      }
-    }
-    return false;
   }
 
   function smoothOrthogonalPath(points) {
@@ -364,7 +411,6 @@
 
     while (x < cols - 1) {
       const moves = [];
-
       moves.push({ value: 'right', w: theme === 'sniper' ? 6 : theme === 'maze' ? 2.4 : 4 });
 
       if (vertRun < cfg.maxVertRun) {
@@ -400,11 +446,8 @@
         }
       }
 
-      if (chosen === 'right') {
-        vertRun = 0;
-      } else {
-        vertRun += 1;
-      }
+      if (chosen === 'right') vertRun = 0;
+      else vertRun += 1;
 
       occupied.push({ x: nx, y: ny });
       cells.push({ x: nx, y: ny });
@@ -494,9 +537,6 @@
 
       const nx = -dy / len;
       const ny = dx / len;
-
-      const mx = (a.x + b.x) / 2;
-      const my = (a.y + b.y) / 2;
 
       const turnBias = cornerStrength(polyline, i) + cornerStrength(polyline, i + 1);
       const exposure = segmentExposureScore(a, b);
@@ -625,6 +665,21 @@
     };
   }
 
+  function createTower(type, x, y) {
+    const def = towerDefs[type];
+    return {
+      type,
+      level: 1,
+      cooldown: 0,
+      ...JSON.parse(JSON.stringify(def)),
+      x,
+      y,
+      animState: 'idle',
+      animFrame: 0,
+      animTimer: 0
+    };
+  }
+
   function startWave() {
     if (state.waveQueue.length || state.gameOver) return;
 
@@ -658,14 +713,7 @@
     if (state.money < def.cost) return;
 
     state.money -= def.cost;
-    state.towers[index] = {
-      type: state.selectedTowerType,
-      level: 1,
-      cooldown: 0,
-      ...JSON.parse(JSON.stringify(def)),
-      x: pads[index].x,
-      y: pads[index].y
-    };
+    state.towers[index] = createTower(state.selectedTowerType, pads[index].x, pads[index].y);
     state.selectedPadIndex = index;
     syncHud();
   }
@@ -714,6 +762,46 @@
     handlePointer(e);
   }, { passive: false });
 
+  function getTowerSpriteMeta(type) {
+    return TOWER_SPRITES[type] || null;
+  }
+
+  function setTowerAnim(tower, stateName) {
+    if (!tower) return;
+    if (tower.animState === stateName && stateName === 'idle') return;
+
+    tower.animState = stateName;
+    tower.animFrame = 0;
+    tower.animTimer = 0;
+  }
+
+  function updateTowerAnimation(tower, dt) {
+    const meta = getTowerSpriteMeta(tower.type);
+    if (!meta) return;
+
+    const row = meta.rows[tower.animState];
+    if (!row) return;
+
+    const frameDuration = 1 / row.fps;
+    tower.animTimer += dt;
+
+    while (tower.animTimer >= frameDuration) {
+      tower.animTimer -= frameDuration;
+      tower.animFrame += 1;
+
+      if (tower.animFrame >= row.count) {
+        if (row.loop) {
+          tower.animFrame = 0;
+        } else {
+          tower.animState = 'idle';
+          tower.animFrame = 0;
+          tower.animTimer = 0;
+          return;
+        }
+      }
+    }
+  }
+
   function update(dt) {
     if (state.gameOver) return;
 
@@ -754,6 +842,9 @@
 
     for (const tower of state.towers) {
       if (!tower) continue;
+
+      updateTowerAnimation(tower, dt);
+
       tower.cooldown -= dt;
       if (tower.cooldown > 0) continue;
 
@@ -781,6 +872,8 @@
           speed: 360,
           color: tower.color
         });
+
+        setTowerAnim(tower, 'attack');
         tower.cooldown = tower.fireRate;
       }
     }
@@ -837,7 +930,7 @@
       }
     }
 
-    ctx.lineWidth = 26;
+    ctx.lineWidth = ROAD_WIDTH;
     ctx.strokeStyle = '#6a5b46';
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
@@ -876,6 +969,30 @@
       s.sx, s.sy, s.sw, s.sh,
       x - ox, y - oy, w, h
     );
+    return true;
+  }
+
+  function drawAnimatedTower(t) {
+    if (!towerSpritesReady) return false;
+
+    const meta = getTowerSpriteMeta(t.type);
+    const img = towerSpriteImages[t.type];
+    if (!meta || !img || !img.complete || !img.naturalWidth) return false;
+
+    const row = meta.rows[t.animState] || meta.rows.idle;
+    const frameIndex = Math.min(t.animFrame, row.count - 1);
+
+    const sx = frameIndex * meta.frameW;
+    const sy = row.y * meta.frameH;
+
+    ctx.drawImage(
+      img,
+      sx, sy, meta.frameW, meta.frameH,
+      Math.round(t.x - meta.ox),
+      Math.round(t.y - meta.oy),
+      meta.drawW, meta.drawH
+    );
+
     return true;
   }
 
@@ -950,7 +1067,7 @@
       ctx.stroke();
     }
 
-    const drawn = drawSprite(t.type, t.x, t.y);
+    const drawn = drawAnimatedTower(t);
     if (!drawn) drawTowerFallback(t);
 
     for (let i = 0; i < t.level; i++) {
@@ -1016,6 +1133,18 @@
     requestAnimationFrame(loop);
   }
 
-  syncHud();
-  requestAnimationFrame(loop);
+  async function boot() {
+    syncHud();
+
+    try {
+      await loadTowerSprites();
+    } catch (err) {
+      console.error(err);
+      towerSpritesReady = false;
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  boot();
 })();
